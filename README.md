@@ -14,11 +14,11 @@ This work has 3 main components
 
 Users can capture EEG signals from their muscles and body throuth the wearables and that data is streamed to the mobile app to help improve their health during and after their activities as well as provide data analytics.   
 
-With all that data being collected and analyzed, it provides another usecase to even push the boundaries of our species as humana and connects us more using spatial technologies.
+With all that data being collected and analyzed, it provides another usecase to even push the boundaries of our species as humans and connects us more using spatial technologies.
 
 ### Power Usecase
 
-3. A webxr realtime dashboard with data analytics for our power users(coaches/scouts/govt agencies,etc) to provide specialised real time analysis for recruitments, preventativie care predictions,etc. 
+3. A webxr realtime dashboard with data analytics via openCV and Qualcom board for analysis for our power users(coaches/scouts/govt agencies,etc) to provide specialised real time analysis for recruitments, preventativie care predictions,etc. 
     We are empowering our power users to imersively capture insights in realtime and to allow them be more productive. 
 
 
