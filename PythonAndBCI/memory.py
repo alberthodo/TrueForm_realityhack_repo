@@ -1,11 +1,17 @@
 import cv2
 import mediapipe as mp
 import numpy as np
-from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 import time
 # Initialize MediaPipe Pose
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
+
+import brainflow
+from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
+from brainflow.data_filter import DataFilter, FilterTypes, AggOperations
+import time
+import numpy as np
+
 
 #Initialize OpenBCI
 params = BrainFlowInputParams()
@@ -15,22 +21,29 @@ board = BoardShim(BoardIds.CYTON_BOARD, params)
 # Define Cyton Board ID
 board_id = BoardIds.CYTON_BOARD.value
 # Prepare and start the session
+
+# initialize calibration and time variables
+time_thres = 100
+max_val = -100000000000
+vals_mean = 0
+num_samples = 5000
+samples = 0
+
+board = BoardShim(BoardIds.CYTON_BOARD, params)
 board.prepare_session()
 
+board.start_stream(45000)
 
-board.start_stream(45000)  # Start data stream with a buffer size of 45000
-print("Streaming data... Press CTRL+C to stop.")
-
-# Flag to monitor
 flag = False
-threshold = 123  # Set the threshold for Channel 1
+threshold = 2000  # Set the EMG threshold for Channel 1
 
 # Get the index of Channel 1
 eeg_channels = BoardShim.get_eeg_channels(board_id)
-channel_1_index = eeg_channels[0]  # Channel 1 corresponds to the first EEG channel index
-channel_1_index = eeg_channels[1]
-value = 0
+channel_1_index = eeg_channels[0]
 
+# end calibration
+
+    # start game
 # Initialize MediaPipe Drawing (for debugging or optional landmarks visualization)
 mp_drawing = mp.solutions.drawing_utils
 
@@ -62,7 +75,7 @@ while cap.isOpened():
 
         h, w, _ = frame.shape
         landmark_coords = {}
-        time.sleep(1)
+
         for landmark in arm_landmarks:
             lm = results.pose_landmarks.landmark[landmark]
             x, y = int(lm.x * w), int(lm.y * h)
@@ -76,24 +89,27 @@ while cap.isOpened():
             shoulder = landmark_coords.get(getattr(mp_pose.PoseLandmark, f"RIGHT_SHOULDER"))
             elbow = landmark_coords.get(getattr(mp_pose.PoseLandmark, f"RIGHT_ELBOW"))
             wrist = landmark_coords.get(getattr(mp_pose.PoseLandmark, f"RIGHT_WRIST"))
-            data = board.get_current_board_data(1)  # Retrieve the last 256 data points (adjust as needed)
-            print(data)
+
+            data = board.get_current_board_data(32)  # Retrieve the last 32 data points (adjust as needed)
+
             # Extract Channel 1 data
             channel_1_data = data[channel_1_index]
+
             # EMG Preprocessing: Calculate absolute value
             abs_channel_1 = np.abs(channel_1_data)
 
             # Optional: Calculate RMS for a window
-            # Check if any value exceeds the threshold
             rms_channel_1 = np.sqrt(np.mean(abs_channel_1 ** 2))
-            print(rms_channel_1)
-            if any(value > threshold for value in channel_1_data):
+
+            # Check if the RMS value exceeds the threshold
+            if rms_channel_1 > threshold:
                 flag = True
             else:
                 flag = False
+            print(rms_channel_1)
+            # Print the flag and RMS value
+            print(f"Flag: {'ON' if flag else 'OFF'}, RMS Value: {rms_channel_1:.2f}")
 
-            # Print the flag status
-            print(f"Flag: {'ON' if flag else 'OFF'}")
             if shoulder and elbow:
                 #Check EEG for Color
                 cv2.line(mask, shoulder, elbow, (0, 255, 0), thickness=10)  # Blue line
